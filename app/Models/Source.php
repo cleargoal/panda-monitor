@@ -1,15 +1,54 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use OpenApi\Annotations as OA;
 
-
+/**
+ * @OA\Schema(@OA\Xml(name="Source"))
+ */
 class Source extends Pivot
 {
     use HasFactory;
+
+    /**
+     * @OA\Property(format="int64")
+     *
+     * @var int
+     */
+    public int $id;
+
+    /**
+     * Subscription URL
+     *
+     * @var string
+     *
+     * @OA\Property(@OA\Xml(name='url', wrapped=true))
+     */
+    public string $url;
+
+    /**
+     * Announce product name
+     *
+     * @var string
+     *
+     * @OA\Property(@OA\Xml(name='name', wrapped=true))
+     */
+    public string $name;
+
+    /**
+     * Product price
+     *
+     * @var int
+     *
+     * @OA\Property(@OA\Xml(name='price', wrapped=true))
+     */
+    public int $price;
 
     /**
      * The attributes that are mass assignable.
