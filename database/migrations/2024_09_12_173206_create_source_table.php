@@ -16,7 +16,8 @@ return new class extends Migration
         Schema::create('source', function (Blueprint $table) {
             $table->id();
             $table->string('url');
-            $table->string('name');
+            $table->string('name')->comment('Products name');
+            $table->string('email')->comment('email for price notifications');
             $table->integer('price');
             $table->timestamps();
         });
