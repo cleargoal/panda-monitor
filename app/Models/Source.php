@@ -42,6 +42,15 @@ class Source extends Pivot
     public string $name;
 
     /**
+     * Email for notifications
+     *
+     * @var string
+     *
+     * @OA\Property(@OA\Xml(name='email', wrapped=true))
+     */
+    public string $email;
+
+    /**
      * Product price
      *
      * @var int
@@ -58,6 +67,7 @@ class Source extends Pivot
     protected $fillable = [
         'url',
         'name',
+        'email',
         'price',
     ];
 
@@ -66,6 +76,7 @@ class Source extends Pivot
         return [
             'url' => 'string',
             'name' => 'string',
+            'email' => 'string',
             'price' => 'integer',
         ];
     }
