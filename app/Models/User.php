@@ -49,8 +49,8 @@ class User extends Authenticatable
         ];
     }
 
-    public function source(): BelongsToMany
+    public function prices(): BelongsToMany
     {
-        return $this->belongsToMany(Source::class);
+        return $this->belongsToMany(Price::class);
     }
 }
