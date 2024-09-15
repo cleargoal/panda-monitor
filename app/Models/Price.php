@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use OpenApi\Annotations as OA;
 
 /**
- * @OA\Schema(@OA\Xml(name="Source"))
+ * @OA\Schema(@OA\Xml(name="Price"))
  */
-class Source extends Pivot
+class Price extends Pivot
 {
     use HasFactory;
 
