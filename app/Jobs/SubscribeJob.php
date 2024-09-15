@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
@@ -14,23 +15,23 @@ class SubscribeJob implements ShouldQueue
 {
     use Dispatchable, Queueable, SerializesModels;
 
-    public int $userId;
+    public User $user;
     public string $sourceUrl;
     public ?string $targetEmail = null;
 
     /**
      * Create a new job instance.
-     * @param int $userId
+     * @param User $user
      * @param string $sourceUrl
      * @param string|null $targetEmail
      */
     public function __construct(
-        int     $userId,
+        User $user,
         string  $sourceUrl,
         ?string $targetEmail = null,
     )
     {
-        $this->userId = $userId;
+        $this->user = $user;
         $this->sourceUrl = $sourceUrl;
         $this->targetEmail = $targetEmail;
     }
@@ -42,6 +43,6 @@ class SubscribeJob implements ShouldQueue
      */
     public function handle(SubscribeService $service): void
     {
-        $service->getPriceProcess($this->userId, $this->sourceUrl, $this->targetEmail);
+        $service->getPriceProcess($this->user, $this->sourceUrl, $this->targetEmail);
     }
 }
