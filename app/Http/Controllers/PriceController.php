@@ -13,8 +13,8 @@ class PriceController extends Controller
 {
 
     /**
-     * @OA\Get(path="/source",
-     *     tags={"source"},
+     * @OA\Get(path="/prices",
+     *     tags={"prices"},
      *     summary="Returns user subscriptions",
      *     description="",
      *     operationId="index",
@@ -36,12 +36,12 @@ class PriceController extends Controller
      */    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $allSources = $user->with('source')->get();
-        return response()->json($allSources);
+        $allPrices = $user->with('prices')->get();
+        return response()->json($allPrices);
     }
 
     /**
-     * Create source and subscribe user for it
+     * Create price record and subscribe user for it
      * @param Request $request
      * @param SubscribeService $subscribeService
      * @return JsonResponse
