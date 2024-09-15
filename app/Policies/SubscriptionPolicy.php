@@ -4,14 +4,14 @@ declare(strict_types = 1);
 
 namespace App\Policies;
 
-use App\Models\Source;
+use App\Models\Price;
 use App\Models\User;
 
 class SubscriptionPolicy
 {
-    public function own(User $user, Source $source): bool
+    public function own(User $user, Price $price): bool
     {
-        return $user->source()->where('project_id', $source->id)->exists();
+        return $user->prices()->where('project_id', $price->id)->exists();
     }
 
 }
