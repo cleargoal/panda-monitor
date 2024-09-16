@@ -51,6 +51,6 @@ class User extends Authenticatable
 
     public function prices(): BelongsToMany
     {
-        return $this->belongsToMany(Price::class);
+        return $this->belongsToMany(Price::class, 'price_user', 'price_id', 'user_id');
     }
 }
