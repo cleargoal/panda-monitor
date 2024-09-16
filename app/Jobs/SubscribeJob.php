@@ -22,18 +22,16 @@ class SubscribeJob implements ShouldQueue
     /**
      * Create a new job instance.
      * @param User $user
-     * @param string $sourceUrl
-     * @param string|null $targetEmail
+     * @param array $data
      */
     public function __construct(
         User $user,
-        string  $sourceUrl,
-        ?string $targetEmail = null,
+        array  $data,
     )
     {
         $this->user = $user;
-        $this->sourceUrl = $sourceUrl;
-        $this->targetEmail = $targetEmail;
+        $this->sourceUrl = $data['url'];
+        $this->targetEmail = array_key_exists('email', $data) ? $data['email'] : null;
     }
 
     /**
