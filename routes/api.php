@@ -2,6 +2,7 @@
 
 declare(strict_types = 1);
 
+use App\Http\Controllers\AdvertController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PriceController;
@@ -13,4 +14,5 @@ Route::middleware(['auth:sanctum',])->group(function () {
     Route::get('/auth-user', [AuthController::class, 'authUser']);
 
     Route::apiResource('/prices', PriceController::class);
+    Route::apiResource('/adverts', AdvertController::class);
 });
