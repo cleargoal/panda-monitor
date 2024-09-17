@@ -37,22 +37,10 @@ components:
     Advert:
       type: object
       properties:
-        id:
-          type: integer
         url:
-          type: string
-        name:
           type: string
         email:
           type: string
-        price:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
 
 paths:
   /register:
