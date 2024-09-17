@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,7 +13,7 @@ use OpenApi\Annotations as OA;
 /**
  * @OA\Schema(@OA\Xml(name="Price"))
  */
-class Price extends Pivot
+class Price extends Model
 {
     use HasFactory;
 
@@ -58,6 +59,8 @@ class Price extends Pivot
      * @OA\Property(@OA\Xml(name='price', wrapped=true))
      */
     public int $price;
+
+    protected $table = 'price';
 
     /**
      * The attributes that are mass assignable.
