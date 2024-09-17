@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Price::class, 'price_user', 'price_id', 'user_id');
     }
+
+    public function adverts(): BelongsToMany
+    {
+        return $this->belongsToMany(Advert::class);
+    }
 }
