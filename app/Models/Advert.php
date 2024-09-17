@@ -16,48 +16,6 @@ class Advert extends Model
 {
     use HasFactory;
 
-    /**
-     * @OA\Property(format="int64")
-     *
-     * @var int
-     */
-    public int $id;
-
-    /**
-     * Subscription URL
-     *
-     * @var string
-     *
-     * @OA\Property(@OA\Xml(name='url', wrapped=true))
-     */
-    public string $url;
-
-    /**
-     * Announce product name
-     *
-     * @var string
-     *
-     * @OA\Property(@OA\Xml(name='name', wrapped=true))
-     */
-    public string $name;
-
-    /**
-     * Email for notifications
-     *
-     * @var string
-     *
-     * @OA\Property(@OA\Xml(name='email', wrapped=true))
-     */
-    public string $email;
-
-    /**
-     * Product price
-     *
-     * @var int
-     *
-     * @OA\Property(@OA\Xml(name='price', wrapped=true))
-     */
-    public int $price;
 
     /**
      * The attributes that are mass assignable.
