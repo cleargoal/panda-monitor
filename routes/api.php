@@ -12,5 +12,7 @@ Route::middleware(['auth:sanctum',])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/auth-user', [AuthController::class, 'authUser']);
 
-    Route::apiResource('/adverts', AdvertController::class)->middleware('own');
+    Route::get('/adverts', [AdvertController::class, 'index'])->middleware('can:own,advert');
+    Route::post('/adverts', [AdvertController::class, 'store']);
+    Route::delete('/adverts', [AdvertController::class, 'destroy'])->middleware('can:own,advert');
 });
