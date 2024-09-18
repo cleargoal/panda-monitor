@@ -4,13 +4,12 @@ declare(strict_types = 1);
 
 namespace App\Services;
 
-use App\Jobs\SendNotification;
 use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
 use App\Notifications\SubscribeNotification;
 use Illuminate\Foundation\Bus\PendingDispatch;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SubscribeService
@@ -38,6 +37,7 @@ class SubscribeService
         $this->getJsonFromFile();
         $this->saveToDb($user->id, $sourceUrl, $targetEmail);
         $this->notifyUser($user, $sourceUrl, $targetEmail);
+        $this->removeTempFile();
     }
 
     protected function readSource(string $sourceUrl): void
@@ -95,7 +95,16 @@ class SubscribeService
             'name' => $this->jsonObj['name'],
             'price' => $this->jsonObj['offers']['price'],
         ];
-        return $user->notify(new SubscribeNotification($mailData));
+        $user->notify(new SubscribeNotification($mailData));
     }
 
+    public function removeTempFile(): array
+    {
+        try {
+            Storage::delete(storage_path('sources/' . $this->srcFile . '.txt'));
+            return ['message' => 'Delete successful'];
+        }catch (\Exception $ex) {
+            return ['message' => $ex->getMessage(), 'code' => $ex->getCode()];
+        }
+    }
 }
