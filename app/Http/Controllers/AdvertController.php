@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\SubscribeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Advert;
 
 class AdvertController extends Controller
 {
@@ -18,7 +19,7 @@ class AdvertController extends Controller
     }
 
     /**
-     * Create price record and subscribe user for it
+     * Create advert record and subscribe user for it
      * @param Request $request
      * @param SubscribeService $subscribeService
      * @return JsonResponse
@@ -29,4 +30,11 @@ class AdvertController extends Controller
         return response()->json($result);
     }
 
+    /**
+     * Delete advert subscription
+     */
+    public function destroy(Request $request, SubscribeService $subscribeService, Advert $advert): JsonResponse
+    {
+        return response()->json($subscribeService->removeSubscription($request->user(), $advert));
+    }
 }
