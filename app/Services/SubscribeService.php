@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -9,6 +9,7 @@ use App\Models\Advert;
 use App\Models\User;
 use App\Notifications\SubscribeNotification;
 use Illuminate\Foundation\Bus\PendingDispatch;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,7 @@ class SubscribeService
     private string $srcFile;
     private string $jsonString;
     private array $jsonObj;
+    private int $createdAdvertId;
 
 
     /**
@@ -46,7 +48,7 @@ class SubscribeService
             $content = file_get_contents($sourceUrl);
             $this->srcFile = Str::random(8);
             file_put_contents(storage_path('sources/' . $this->srcFile . '.txt'), $content);
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             // retry Job sequentially or later
         }
     }
@@ -80,15 +82,17 @@ class SubscribeService
         $newAdvert->name = $this->jsonObj['name'];
         $newAdvert->price = $this->jsonObj['offers']['price'];
         $newAdvert->save();
+        $this->createdAdvertId = $newAdvert->id;
 
         $user = User::find($userId);
         $user->adverts()->attach($newAdvert->id);
     }
 
-    protected function notifyUser(User $user, string $sourceUrl, string $targetEmail)
+    protected function notifyUser(User $user, string $sourceUrl, string $targetEmail): void
     {
         $mailData = [
             'userId' => $user,
+            'advertId' => $this->createdAdvertId,
             'sourceUrl' => $sourceUrl,
             'targetEmail' => $targetEmail,
             'currency' => $this->jsonObj['offers']['priceCurrency'],
@@ -98,13 +102,15 @@ class SubscribeService
         $user->notify(new SubscribeNotification($mailData));
     }
 
-    public function removeTempFile(): array
+    protected function removeTempFile(): void
     {
-        try {
-            Storage::delete(storage_path('sources/' . $this->srcFile . '.txt'));
-            return ['message' => 'Delete successful'];
-        }catch (\Exception $ex) {
-            return ['message' => $ex->getMessage(), 'code' => $ex->getCode()];
-        }
+        Log::info('removeTempFile', [storage_path('sources/' . $this->srcFile . '.txt')]);
+        Storage::delete(storage_path('sources/' . $this->srcFile . '.txt'));
+    }
+
+    public function removeSubscription($user, $advert)
+    {
+        $user->adverts()->detach($advert->id);
+        return $advert->delete();
     }
 }
