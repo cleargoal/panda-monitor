@@ -11,30 +11,36 @@ use App\Models\Advert;
 
 class AdvertController extends Controller
 {
+    public function __construct(private readonly SubscribeService $subscribeService)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $allRecs = $user->with('adverts')->get();
+        $allRecs = $user->adverts()->get();
         return response()->json($allRecs);
     }
 
     /**
      * Create advert record and subscribe user for it
      * @param Request $request
-     * @param SubscribeService $subscribeService
      * @return JsonResponse
      */
-    public function store(Request $request, SubscribeService $subscribeService): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $result = $subscribeService->subscribe($request->user(), $request->all());
+        $result = $this->subscribeService->subscribe($request->user(), $request->all());
         return response()->json($result);
     }
 
     /**
      * Delete advert subscription
+     * @param Request $request
+     * @param Advert $advert
+     * @return JsonResponse
      */
-    public function destroy(Request $request, SubscribeService $subscribeService, Advert $advert): JsonResponse
+    public function destroy(Request $request, Advert $advert): JsonResponse
     {
-        return response()->json($subscribeService->removeSubscription($request->user(), $advert));
+        return response()->json($this->subscribeService->removeSubscription($request->user(), $advert));
     }
 }
