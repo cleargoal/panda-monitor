@@ -7,15 +7,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use OpenApi\Annotations as OA;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * @OA\Schema(@OA\Xml(name="Advert"))
  */
 class Advert extends Model
 {
-    use HasFactory;
-
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -43,4 +42,5 @@ class Advert extends Model
     {
         return $this->belongsToMany(User::class);
     }
+
 }
