@@ -8,4 +8,4 @@
 ```
 
 ### Prepare structure
-1. create folder 'sources' in the 'storage' directory
+1. 
