@@ -146,9 +146,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Advert'
+              type: object
+              properties:
+                url:
+                  type: string
+                email:
+                  type: string
+              required:
+                - url
       responses:
         201:
           description: Subscription created successfully
