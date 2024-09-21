@@ -17,7 +17,6 @@ return new class extends Migration
             $table->id();
             $table->string('url');
             $table->string('name')->comment('Products name');
-            $table->string('email')->nullable()->comment('email for price notifications');
             $table->integer('price');
             $table->timestamps();
         });
