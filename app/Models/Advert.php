@@ -24,7 +24,6 @@ class Advert extends Model
     protected $fillable = [
         'url',
         'name',
-        'email',
         'price',
     ];
 
@@ -33,7 +32,6 @@ class Advert extends Model
         return [
             'url' => 'string',
             'name' => 'string',
-            'email' => 'string',
             'price' => 'integer',
         ];
     }
