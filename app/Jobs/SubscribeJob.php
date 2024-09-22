@@ -53,6 +53,6 @@ class SubscribeJob implements ShouldQueue
      */
     public function handle(SubscribeService $service): void
     {
-        $service->getAdvertProcess($this->user, $this->sourceUrl, $this->targetEmail);
+        $service->subscriptionProcess($this->user, $this->sourceUrl, $this->targetEmail);
     }
 }
