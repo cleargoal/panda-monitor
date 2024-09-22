@@ -51,6 +51,6 @@ class User extends Authenticatable
 
     public function adverts(): BelongsToMany
     {
-        return $this->belongsToMany(Advert::class);
+        return $this->belongsToMany(Advert::class)->withPivot('email');
     }
 }
