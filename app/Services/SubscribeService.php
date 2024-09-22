@@ -7,9 +7,11 @@ namespace App\Services;
 use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
+use App\Notifications\AdvertMissingNotification;
 use App\Notifications\SubscribeNotification;
 use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -21,7 +23,7 @@ class SubscribeService
     private string $jsonString;
     private array $jsonObj;
     private int $createdAdvertId;
-    private Advert $newAdvert;
+    private bool $activeAdvert = true;
 
     /**
      * Dispatch job
@@ -29,12 +31,11 @@ class SubscribeService
      * @param array $data
      * @return PendingDispatch|string
      */
-    public function subscribe(User $user, array $data): PendingDispatch | string
+    public function subscribe(User $user, array $data): PendingDispatch|string
     {
-        if($user->adverts()->where('url', $data['url'])->get()->count() === 0) {
+        if ($user->adverts()->where('url', $data['url'])->get()->count() === 0) {
             return SubscribeJob::dispatch($user, $data);
-        }
-        else {
+        } else {
             return 'You are already subscribed to this advert.';
         }
     }
@@ -43,9 +44,13 @@ class SubscribeService
     {
         $this->readSource($sourceUrl);
         $this->getJsonFromFile();
-        $this->saveToDb($user->id, $sourceUrl, $targetEmail);
-        $this->notifyUser($user, $sourceUrl, $targetEmail);
-        $this->removeTempFile();
+        if ($this->activeAdvert) {
+            $this->saveToDb($user, $sourceUrl, $targetEmail);
+            $this->notifyOnSuccessful($user, $sourceUrl, $targetEmail);
+            $this->removeTempFile();
+        } else {
+            $this->notifyUnsuccessful($user, $sourceUrl, $targetEmail);
+        }
     }
 
     /**
@@ -59,7 +64,7 @@ class SubscribeService
             $this->srcFile = Str::random(8);
             Storage::put('sources/' . $this->srcFile . '.txt', $content);
         } catch (\Exception $exception) {
-            // retry Job sequentially or later
+            Log::error($exception->getMessage(), ['method' => 'getSource', 'url' => $sourceUrl]);
         }
     }
 
@@ -76,37 +81,47 @@ class SubscribeService
                 $scriptEnd = '</script><script defer="defer"';
                 $dataEndPosition = stripos($item, $scriptEnd);
                 $this->jsonString = substr($item, $dataStartPosition, $dataEndPosition - $dataStartPosition);
+                $this->jsonObj = json_decode($this->jsonString, true);
                 break;
             }
         }
+        if ($this->jsonString === '') {
+            $this->activeAdvert = false;
+        }
     }
 
-    protected function saveToDb(int $userId, string $sourceUrl, string $targetEmail): void
+    protected function saveToDb(User $user, string $sourceUrl, string $targetEmail): void
     {
         $validator = Validator::make(['email' => $targetEmail], [
             'email' => 'email',
         ]);
-
         $email = $validator->fails() ? null : $targetEmail;
-        $this->jsonObj = json_decode($this->jsonString, true);
-        // object gets data: $jsonObj['offers']['priceCurrency'], $jsonObj['offers']['price'], $jsonObj['name']
 
-        $this->newAdvert = new Advert();
-        $this->newAdvert->url = $sourceUrl;
-        $this->newAdvert->email = $email;
-        $this->newAdvert->name = $this->jsonObj['name'];
-        $this->newAdvert->price = $this->jsonObj['offers']['price'];
-        $this->newAdvert->save();
-        $this->createdAdvertId = $this->newAdvert->id;
+        $advert = Advert::where('url', $sourceUrl)->first();
 
-        $user = User::find($userId);
-        $user->adverts()->attach($this->newAdvert->id);
+        if ($advert) {
+            $this->createdAdvertId = $advert->id;
+        } else {
+            $newAdvert = new Advert();
+            $newAdvert->url = $sourceUrl;
+            $newAdvert->name = $this->jsonObj['name'];
+            $newAdvert->price = $this->jsonObj['offers']['price'];
+            $newAdvert->save();
+            $this->createdAdvertId = $newAdvert->id;
+        }
+
+        $user->adverts()->attach($this->createdAdvertId, ['email' => $email]);
     }
 
-    protected function notifyUser(User $user, string $sourceUrl, string $targetEmail): void
+    /**
+     * Successful notification
+     * @param User $user
+     * @param string $sourceUrl
+     * @param string $targetEmail
+     */
+    protected function notifyOnSuccessful(User $user, string $sourceUrl, string $targetEmail): void
     {
         $mailData = [
-            'userId' => $user,
             'advertId' => $this->createdAdvertId,
             'sourceUrl' => $sourceUrl,
             'targetEmail' => $targetEmail,
@@ -114,12 +129,31 @@ class SubscribeService
             'name' => $this->jsonObj['name'],
             'price' => $this->jsonObj['offers']['price'],
         ];
-        if ($this->newAdvert->email) {
-            $this->newAdvert->notify(new SubscribeNotification($mailData));
-        }
-        else {
+
+        // Get the email from the pivot table (advert_user)
+        $advertUserPivot = $user->adverts()->where('advert_id', $this->createdAdvertId)->first();
+
+        if ($advertUserPivot && $advertUserPivot->pivot && $advertUserPivot->pivot->email) {
+            Notification::route('mail', $advertUserPivot->pivot->email)->notify(new SubscribeNotification($mailData));
+        } else {
             $user->notify(new SubscribeNotification($mailData));
         }
+    }
+
+    /**
+     * Unsuccessful notification
+     * @param User $user
+     * @param string $sourceUrl
+     * @param string $targetEmail
+     */
+    protected function notifyUnsuccessful(User $user, string $sourceUrl, string $targetEmail): void
+    {
+        $mailData = [
+            'sourceUrl' => $sourceUrl,
+            'targetEmail' => $targetEmail,
+        ];
+
+        $user->notify(new AdvertMissingNotification($mailData));
     }
 
     protected function removeTempFile(): void
