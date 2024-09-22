@@ -49,7 +49,6 @@ class SubscribeNotification extends Notification implements ShouldQueue
             ->line('You are successfully subscribed to the advert:')
             ->line($name)
             ->line('URL: ' . $sourceUrl)
-            ->line('<br>')
             ->action('You can delete this subscription', $urlDelete)
             ->line('Thank you for using our application!');
     }
