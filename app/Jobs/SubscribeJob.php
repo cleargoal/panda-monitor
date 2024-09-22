@@ -15,6 +15,18 @@ class SubscribeJob implements ShouldQueue
 {
     use Dispatchable, Queueable, SerializesModels;
 
+    /**
+     * The number of times the job may be attempted.
+     * @var int
+     */
+    public int $tries = 3;
+
+    /**
+     * The number of seconds to wait before retrying the job.
+     * @var int
+     */
+    public int $backoff = 15;
+
     public User $user;
     public string $sourceUrl;
     public ?string $targetEmail = null;
