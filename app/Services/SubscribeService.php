@@ -7,23 +7,22 @@ namespace App\Services;
 use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
-use App\Notifications\AdvertMissingNotification;
 use App\Notifications\SubscribeNotification;
 use Illuminate\Foundation\Bus\PendingDispatch;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class SubscribeService
 {
 
-    private string $srcFile;
-    private string $jsonString;
     private array $jsonObj;
     private int $createdAdvertId;
-    private bool $activeAdvert = true;
+    private CommonService $service;
+
+    public function __construct(CommonService $service)
+    {
+        $this->service = $service;
+    }
 
     /**
      * Dispatch job
@@ -40,53 +39,17 @@ class SubscribeService
         }
     }
 
-    public function getAdvertProcess(User $user, string $sourceUrl, string $targetEmail): void
+    public function subscriptionProcess(User $user, string $sourceUrl, string $targetEmail): void
     {
-        $this->readSource($sourceUrl);
-        $this->getJsonFromFile();
-        if ($this->activeAdvert) {
+        $srcFile = $this->service->readSource($sourceUrl);
+        $activeAdvert = $this->service->getJsonFromFile($srcFile);
+        if ($activeAdvert['active']) {
+            $this->jsonObj = $activeAdvert['jsonObj'];
             $this->saveToDb($user, $sourceUrl, $targetEmail);
-            $this->notifyOnSuccessful($user, $sourceUrl, $targetEmail);
-            $this->removeTempFile();
+            $this->notifyOnSuccessful($user, $sourceUrl);
+            $this->service->removeTempFile($srcFile);
         } else {
-            $this->notifyUnsuccessful($user, $sourceUrl, $targetEmail);
-        }
-    }
-
-    /**
-     * Read resource by URL
-     * @param string $sourceUrl
-     */
-    protected function readSource(string $sourceUrl): void
-    {
-        try {
-            $content = file_get_contents($sourceUrl);
-            $this->srcFile = Str::random(8);
-            Storage::put('sources/' . $this->srcFile . '.txt', $content);
-        } catch (\Exception $exception) {
-            Log::error($exception->getMessage(), ['method' => 'getSource', 'url' => $sourceUrl]);
-        }
-    }
-
-
-    protected function getJsonFromFile(): void
-    {
-        $contentArray = explode("\n", Storage::get('sources/' . $this->srcFile . '.txt'));
-        $this->jsonString = '';
-        foreach ($contentArray as $index => $item) {
-            if (str_contains($item, '@context')) {
-                $scriptStart = '@context';
-                $dataStartPosition = stripos($item, $scriptStart) - 2;
-
-                $scriptEnd = '</script><script defer="defer"';
-                $dataEndPosition = stripos($item, $scriptEnd);
-                $this->jsonString = substr($item, $dataStartPosition, $dataEndPosition - $dataStartPosition);
-                $this->jsonObj = json_decode($this->jsonString, true);
-                break;
-            }
-        }
-        if ($this->jsonString === '') {
-            $this->activeAdvert = false;
+            $this->service->notifyUnsuccessful($user, $sourceUrl);
         }
     }
 
@@ -117,14 +80,12 @@ class SubscribeService
      * Successful notification
      * @param User $user
      * @param string $sourceUrl
-     * @param string $targetEmail
      */
-    protected function notifyOnSuccessful(User $user, string $sourceUrl, string $targetEmail): void
+    protected function notifyOnSuccessful(User $user, string $sourceUrl): void
     {
         $mailData = [
             'advertId' => $this->createdAdvertId,
             'sourceUrl' => $sourceUrl,
-            'targetEmail' => $targetEmail,
             'currency' => $this->jsonObj['offers']['priceCurrency'],
             'name' => $this->jsonObj['name'],
             'price' => $this->jsonObj['offers']['price'],
@@ -138,28 +99,6 @@ class SubscribeService
         } else {
             $user->notify(new SubscribeNotification($mailData));
         }
-    }
-
-    /**
-     * Unsuccessful notification
-     * @param User $user
-     * @param string $sourceUrl
-     * @param string $targetEmail
-     */
-    protected function notifyUnsuccessful(User $user, string $sourceUrl, string $targetEmail): void
-    {
-        $mailData = [
-            'sourceUrl' => $sourceUrl,
-            'targetEmail' => $targetEmail,
-        ];
-
-        $user->notify(new AdvertMissingNotification($mailData));
-    }
-
-    protected function removeTempFile(): void
-    {
-        $delPath = 'sources/' . $this->srcFile . '.txt';
-        Storage::delete($delPath);
     }
 
     public function removeSubscription(User $user, Advert $advert): ?bool
