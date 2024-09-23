@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
+use App\Notifications\AdvertMissingNotification;
 use App\Notifications\SubscribeNotification;
 use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Facades\Notification;
@@ -49,7 +50,7 @@ class SubscribeService
             $this->notifyOnSuccessful($user, $sourceUrl);
             $this->service->removeTempFile($srcFile);
         } else {
-            $this->service->notifyUnsuccessful($user, $sourceUrl);
+            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $srcFile));
         }
     }
 
