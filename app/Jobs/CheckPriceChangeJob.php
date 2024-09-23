@@ -35,7 +35,7 @@ class CheckPriceChangeJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle(MonitorService $monitorService)
+    public function handle(MonitorService $monitorService): void
     {
         $monitorService->checkPrices($this->advertId, $this->url);
     }
