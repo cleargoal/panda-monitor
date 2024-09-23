@@ -14,10 +14,10 @@ class MonitorService
     private array $advertData;
     private NotifyPriceService $notifyService;
 
-    public function __construct(CommonService $service, NotifyPriceService $notifyService)
+    public function __construct()
     {
-        $this->service = $service;
-        $this->notifyService = $notifyService;
+        $this->service = new CommonService;
+        $this->notifyService = new NotifyPriceService;
     }
 
     public function createCheckingJobs(): void
