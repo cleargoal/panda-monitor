@@ -48,10 +48,10 @@ class SubscribeService
             $this->advertData = $activeAdvert['advertData'];
             $this->saveToDb($user, $sourceUrl, $targetEmail);
             $this->notifyOnSuccessful($user, $sourceUrl);
-            $this->service->removeTempFile($srcFile);
         } else {
             $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $sourceUrl));
         }
+        $this->service->removeTempFile($srcFile);
     }
 
     protected function saveToDb(User $user, string $sourceUrl, string $targetEmail): void

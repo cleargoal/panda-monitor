@@ -36,10 +36,10 @@ class MonitorService
         if ($activeAdvert['active']) {
             $this->advertData = $activeAdvert['advertData'];
             $this->dbOperations($advertId);
-            $this->service->removeTempFile($srcFile);
         } else {
             $this->notifyService->notifyMissingAdvert($advertId, $sourceUrl);
         }
+        $this->service->removeTempFile($srcFile);
     }
 
     protected function dbOperations(int $advertId): void
