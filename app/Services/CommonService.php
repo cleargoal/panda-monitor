@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Notifications\AdvertMissingNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CommonService
 {
-
-    private array $jsonObj;
-    private int $createdAdvertId;
 
     /**
      * Read resource by URL
@@ -34,37 +29,23 @@ class CommonService
         return $srcFile;
     }
 
-    public function getJsonFromFile($srcFile): array
+    public function getDataFromFile($srcFile): array
     {
         $contentArray = explode("\n", Storage::get('sources/' . $srcFile . '.txt'));
         $jsonString = '';
-        foreach ($contentArray as $index => $item) {
+        $advertData = [];
+        foreach ($contentArray as $item) {
             if (str_contains($item, '@context')) {
                 $scriptStart = '@context';
                 $dataStartPosition = stripos($item, $scriptStart) - 2;
-
                 $scriptEnd = '</script><script defer="defer"';
                 $dataEndPosition = stripos($item, $scriptEnd);
                 $jsonString = substr($item, $dataStartPosition, $dataEndPosition - $dataStartPosition);
-                $this->jsonObj = json_decode($jsonString, true);
+                $advertData = json_decode($jsonString, true);
                 break;
             }
         }
-        return ['active' => $jsonString !== '', 'jsonObj' => $this->jsonObj];
-    }
-
-    /**
-     * Unsuccessful notification
-     * @param User $user
-     * @param string $sourceUrl
-     */
-    public function notifyUnsuccessful(User $user, string $sourceUrl): void
-    {
-        $mailData = [
-            'sourceUrl' => $sourceUrl,
-        ];
-
-        $user->notify(new AdvertMissingNotification($mailData));
+        return ['active' => $jsonString !== '', 'advertData' => $advertData];
     }
 
     public function removeTempFile($srcFile): void
