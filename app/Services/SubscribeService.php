@@ -50,7 +50,7 @@ class SubscribeService
             $this->notifyOnSuccessful($user, $sourceUrl);
             $this->service->removeTempFile($srcFile);
         } else {
-            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $srcFile));
+            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $sourceUrl));
         }
     }
 
