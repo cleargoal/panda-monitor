@@ -42,7 +42,7 @@ class SubscribeService
     public function subscriptionProcess(User $user, string $sourceUrl, string $targetEmail): void
     {
         $srcFile = $this->service->readSource($sourceUrl);
-        $activeAdvert = $this->service->getJsonFromFile($srcFile);
+        $activeAdvert = $this->service->getDataFromFile($srcFile);
         if ($activeAdvert['active']) {
             $this->advertData = $activeAdvert['advertData'];
             $this->saveToDb($user, $sourceUrl, $targetEmail);
