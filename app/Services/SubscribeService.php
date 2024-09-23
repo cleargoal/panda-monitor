@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 class SubscribeService
 {
 
-    private array $jsonObj;
+    private array $advertData;
     private int $createdAdvertId;
     private CommonService $service;
 
@@ -44,7 +44,7 @@ class SubscribeService
         $srcFile = $this->service->readSource($sourceUrl);
         $activeAdvert = $this->service->getJsonFromFile($srcFile);
         if ($activeAdvert['active']) {
-            $this->jsonObj = $activeAdvert['jsonObj'];
+            $this->advertData = $activeAdvert['advertData'];
             $this->saveToDb($user, $sourceUrl, $targetEmail);
             $this->notifyOnSuccessful($user, $sourceUrl);
             $this->service->removeTempFile($srcFile);
@@ -67,8 +67,8 @@ class SubscribeService
         } else {
             $newAdvert = new Advert();
             $newAdvert->url = $sourceUrl;
-            $newAdvert->name = $this->jsonObj['name'];
-            $newAdvert->price = $this->jsonObj['offers']['price'];
+            $newAdvert->name = $this->advertData['name'];
+            $newAdvert->price = $this->advertData['offers']['price'];
             $newAdvert->save();
             $this->createdAdvertId = $newAdvert->id;
         }
@@ -86,9 +86,9 @@ class SubscribeService
         $mailData = [
             'advertId' => $this->createdAdvertId,
             'sourceUrl' => $sourceUrl,
-            'currency' => $this->jsonObj['offers']['priceCurrency'],
-            'name' => $this->jsonObj['name'],
-            'price' => $this->jsonObj['offers']['price'],
+            'currency' => $this->advertData['offers']['priceCurrency'],
+            'name' => $this->advertData['name'],
+            'price' => $this->advertData['offers']['price'],
         ];
 
         // Get the email from the pivot table (advert_user)
