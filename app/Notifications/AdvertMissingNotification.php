@@ -15,14 +15,16 @@ class AdvertMissingNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels, InteractsWithQueue;
 
-    private array $data;
+    private string $subject;
+    private string $sourceUrl;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(array $data)
+    public function __construct(string $subject, string $sourceUrl)
     {
-        $this->data = $data;
+        $this->subject = $subject;
+        $this->sourceUrl = $sourceUrl;
     }
 
     /**
@@ -40,12 +42,10 @@ class AdvertMissingNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $sourceUrl = $this->data['sourceUrl'];
         return (new MailMessage)
-            ->subject('Unsuccessful subscription')
-            ->greeting('Subscription unsuccessful!')
-            ->line('Advert missing or deactivated.')
-            ->line('URL: ' . $sourceUrl)
+            ->subject($this->subject)
+            ->greeting('Advert missing or deactivated.')
+            ->line('URL: ' . $this->sourceUrl)
             ->line('Thank you for using our application!');
     }
 
