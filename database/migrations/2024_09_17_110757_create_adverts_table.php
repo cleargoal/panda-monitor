@@ -16,8 +16,8 @@ return new class extends Migration
         Schema::create('adverts', function (Blueprint $table) {
             $table->id();
             $table->string('url');
-            $table->string('name')->comment('Products name');
-            $table->integer('price');
+            $table->string('name')->nullable()->comment('Products name');
+            $table->integer('price')->nullable();
             $table->timestamps();
         });
     }
