@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateSubscriptionRequest;
 use App\Services\SubscribeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,12 +25,13 @@ class AdvertController extends Controller
 
     /**
      * Create advert record and subscribe user for it
-     * @param Request $request
+     * @param CreateSubscriptionRequest $request
      * @return JsonResponse
      */
-    public function store(Request $request): JsonResponse
+    public function store(CreateSubscriptionRequest $request): JsonResponse
     {
-        $result = $this->subscribeService->subscribe($request->user(), $request->all());
+        $validated = $request->validated();
+        $result = $this->subscribeService->subscribe($request->user(), $validated);
         return response()->json($result);
     }
 
