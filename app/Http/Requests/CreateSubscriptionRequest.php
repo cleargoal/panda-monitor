@@ -26,7 +26,7 @@ class CreateSubscriptionRequest extends FormRequest
         return [
             'url.required' => 'The URL is required.',
             'url.url' => 'The URL must be a valid format.',
-            'email.email' => 'The email must be a valid email address.',
+            'email.email' => 'The email must be a valid email address or empty field.',
         ];
     }
 }
