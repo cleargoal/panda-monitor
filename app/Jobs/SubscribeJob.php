@@ -28,8 +28,7 @@ class SubscribeJob implements ShouldQueue
     public int $backoff = 15;
 
     public User $user;
-    public string $sourceUrl;
-    public ?string $targetEmail = null;
+    public array $data;
 
     /**
      * Create a new job instance.
@@ -42,8 +41,7 @@ class SubscribeJob implements ShouldQueue
     )
     {
         $this->user = $user;
-        $this->sourceUrl = $data['url'];
-        $this->targetEmail = array_key_exists('email', $data) ? $data['email'] : null;
+        $this->data = $data;
     }
 
     /**
@@ -53,6 +51,6 @@ class SubscribeJob implements ShouldQueue
      */
     public function handle(SubscribeService $service): void
     {
-        $service->subscriptionProcess($this->user, $this->sourceUrl, $this->targetEmail);
+        $service->subscriptionProcess($this->user, $this->data);
     }
 }
