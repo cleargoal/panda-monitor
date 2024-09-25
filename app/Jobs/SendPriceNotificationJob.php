@@ -32,6 +32,6 @@ class SendPriceNotificationJob implements ShouldQueue
      */
     public function handle(MonitorService $monitorService): void
     {
-        $monitorService->process();
+        $monitorService->processPrices();
     }
 }
