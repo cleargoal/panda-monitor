@@ -6,7 +6,6 @@ namespace App\Policies;
 
 use App\Models\Advert;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 
 class AdvertPolicy
 {
