@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateSubscriptionRequest;
+use App\Http\Requests\DeleteAdvertRequest;
 use App\Services\SubscribeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,11 +38,11 @@ class AdvertController extends Controller
 
     /**
      * Delete advert subscription
-     * @param Request $request
+     * @param DeleteAdvertRequest $request
      * @param Advert $advert
      * @return JsonResponse
      */
-    public function destroy(Request $request, Advert $advert): JsonResponse
+    public function destroy(DeleteAdvertRequest $request, Advert $advert): JsonResponse
     {
         return response()->json($this->subscribeService->removeSubscription($request->user(), $advert));
     }
