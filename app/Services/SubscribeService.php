@@ -9,18 +9,16 @@ use App\Models\Advert;
 use App\Models\User;
 use App\Notifications\AdvertMissingNotification;
 use App\Notifications\SubscribeNotification;
-use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Validator;
 
 class SubscribeService
 {
 
     private array $advertData;
     private int $createdAdvertId;
-    private CommonService $service;
+    private ParserService $service;
 
-    public function __construct(CommonService $service)
+    public function __construct(ParserService $service)
     {
         $this->service = $service;
     }
@@ -29,74 +27,76 @@ class SubscribeService
      * Dispatch job
      * @param User $user
      * @param array $data
-     * @return PendingDispatch|string
+     * @return string
      */
-    public function subscribe(User $user, array $data): PendingDispatch|string
+    public function subscribe(User $user, array $data): string
     {
+        $data['email'] = $data['email'] ?? null;
         if ($user->adverts()->where('url', $data['url'])->get()->count() === 0) {
-            return SubscribeJob::dispatch($user, $data);
+            $data['advertId'] = $this->createAdvert($data['url']);
+            SubscribeJob::dispatch($user, $data);
+            return 'Successfully subscribed';
         } else {
             return 'You are already subscribed to this advert.';
         }
     }
 
-    public function subscriptionProcess(User $user, string $sourceUrl, string $targetEmail): void
+    /**
+     * Create new advert record
+     * @param string $url
+     * @return int
+     */
+    protected function createAdvert(string $url): int
     {
-        $srcFile = $this->service->readSource($sourceUrl);
-        $activeAdvert = $this->service->getDataFromFile($srcFile);
-        if ($activeAdvert['active']) {
-            $this->advertData = $activeAdvert['advertData'];
-            $this->saveToDb($user, $sourceUrl, $targetEmail);
-            $this->notifyOnSuccessful($user, $sourceUrl);
-        } else {
-            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $sourceUrl));
-        }
-        $this->service->removeTempFile($srcFile);
+        $newAdvert = new Advert();
+        $newAdvert->url = $url;
+        $newAdvert->save();
+        return $newAdvert->id;
     }
 
-    protected function saveToDb(User $user, string $sourceUrl, string $targetEmail): void
+    public function subscriptionProcess(User $user, array $data): void
     {
-        $validator = Validator::make(['email' => $targetEmail], [
-            'email' => 'email',
-        ]);
-        $email = $validator->fails() ? null : $targetEmail;
-
-        $advert = Advert::where('url', $sourceUrl)->first();
-
-        if ($advert) {
-            $this->createdAdvertId = $advert->id;
+        $this->advertData = $this->service->getDataFromPage($data['url']);
+        if ($this->advertData['price']) {
+            $this->saveDataToDb($user, $data);
+            $this->notifyOnSuccessful($user, $data);
         } else {
-            $newAdvert = new Advert();
-            $newAdvert->url = $sourceUrl;
-            $newAdvert->name = $this->advertData['name'];
-            $newAdvert->price = $this->advertData['offers']['price'];
-            $newAdvert->save();
-            $this->createdAdvertId = $newAdvert->id;
+            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $data['url']));
         }
+    }
 
-        $user->adverts()->attach($this->createdAdvertId, ['email' => $email]);
+    /**
+     * Save to adverts table the name and price from advert
+     * @param User $user
+     * @param array $data
+     */
+    protected function saveDataToDb(User $user, array $data): void
+    {
+        $this->createdAdvertId = $data['advertId'];
+        $getAdvert = Advert::find($this->createdAdvertId);
+        $getAdvert->name = $this->advertData['name'];
+        $getAdvert->price = $this->advertData['price'];
+        $getAdvert->save();
+
+        $user->adverts()->attach($this->createdAdvertId, ['email' => $data['email']]);
     }
 
     /**
      * Successful notification
      * @param User $user
-     * @param string $sourceUrl
+     * @param array $data
      */
-    protected function notifyOnSuccessful(User $user, string $sourceUrl): void
+    protected function notifyOnSuccessful(User $user, array $data): void
     {
         $mailData = [
             'advertId' => $this->createdAdvertId,
-            'sourceUrl' => $sourceUrl,
-            'currency' => $this->advertData['offers']['priceCurrency'],
+            'sourceUrl' => $data['url'],
             'name' => $this->advertData['name'],
-            'price' => $this->advertData['offers']['price'],
+            'price' => $this->advertData['price'],
         ];
 
-        // Get the email from the pivot table (advert_user)
-        $advertUserPivot = $user->adverts()->where('advert_id', $this->createdAdvertId)->first();
-
-        if ($advertUserPivot && $advertUserPivot->pivot && $advertUserPivot->pivot->email) {
-            Notification::route('mail', $advertUserPivot->pivot->email)->notify(new SubscribeNotification($mailData));
+        if ($data['email'] !== null) {
+            Notification::route('mail', $data['email'])->notify(new SubscribeNotification($mailData));
         } else {
             $user->notify(new SubscribeNotification($mailData));
         }
