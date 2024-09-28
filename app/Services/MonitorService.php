@@ -7,17 +7,18 @@ namespace App\Services;
 use App\Jobs\CheckPriceChangeJob;
 use App\Jobs\SendPriceNotificationJob;
 use App\Models\Advert;
+use Illuminate\Support\Facades\Log;
 
 class MonitorService
 {
-    private CommonService $service;
+    private ParserService $service;
     private array $advertData;
-    private NotifyPriceService $notifyService;
+    private NotifyService $notifyService;
 
     public function __construct()
     {
-        $this->service = new CommonService;
-        $this->notifyService = new NotifyPriceService;
+        $this->service = new ParserService;
+        $this->notifyService = new NotifyService;
     }
 
     public function createCheckingJobs(): void
@@ -31,24 +32,49 @@ class MonitorService
 
     public function checkPrices(int $advertId, string $sourceUrl): void
     {
-        $srcFile = $this->service->readSource($sourceUrl);
-        $activeAdvert = $this->service->getDataFromFile($srcFile);
-        if ($activeAdvert['active']) {
-            $this->advertData = $activeAdvert['advertData'];
+        $this->advertData = $this->service->getDataFromPage($sourceUrl);
+        if ($this->advertData['price']) {
             $this->dbOperations($advertId);
         } else {
             $this->notifyService->notifyMissingAdvert($advertId, $sourceUrl);
         }
-        $this->service->removeTempFile($srcFile);
     }
 
     protected function dbOperations(int $advertId): void
     {
         $advert = Advert::find($advertId);
 
-        if ($advert->price !== $this->advertData['offers']['price']) {
-            $advert->price = $this->advertData['offers']['price'];
+        if ($advert->price !== $this->advertData['price']) {
+            $advert->price = $this->advertData['price'];
             $advert->save();
+        }
+    }
+
+    /**
+     * Method called from Job: SendPriceNotificationJob,
+     * works with updated adverts data
+     * and calls notifyUserOfChanges
+     * @return void
+     */
+    public function processPrices(): void
+    {
+        $changedPrices = Advert::whereDate('updated_at', today())
+            ->whereDate('created_at', '!=', today())
+            ->with('users')
+            ->get();
+
+        if ($changedPrices->isNotEmpty()) {
+            $userAdverts = [];
+            foreach ($changedPrices as $advert) {
+                foreach ($advert->users as $user) {
+                    $userAdverts[$user->id]['user'] = $user;
+                    $userAdverts[$user->id]['adverts'][] = $advert;
+                }
+            }
+
+            foreach ($userAdverts as $userData) {
+                $this->notifyService->notifyUserOfChanges($userData['user'], $userData['adverts']);
+            }
         }
     }
 

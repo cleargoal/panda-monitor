@@ -14,5 +14,5 @@ Route::middleware(['auth:sanctum',])->group(function () {
 
     Route::get('/adverts', [AdvertController::class, 'index']);
     Route::post('/adverts', [AdvertController::class, 'store']);
-    Route::delete('/adverts/{advert}', [AdvertController::class, 'destroy'])->name('adverts.destroy')->middleware('can:destroy,advert');
+    Route::delete('/adverts/{advert}', [AdvertController::class, 'destroy'])->name('adverts.destroy')->can('destroy','advert');
 });

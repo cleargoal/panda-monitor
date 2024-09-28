@@ -41,7 +41,7 @@ class AdvertController extends Controller
      * @param Advert $advert
      * @return JsonResponse
      */
-    public function destroy(Request $request, Advert $advert): JsonResponse
+    public function destroy(Advert $advert, Request $request): JsonResponse
     {
         return response()->json($this->subscribeService->removeSubscription($request->user(), $advert));
     }

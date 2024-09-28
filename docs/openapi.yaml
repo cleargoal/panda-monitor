@@ -154,6 +154,7 @@ paths:
                   type: string
                 email:
                   type: string
+                  description: "Email must be a valid email address or left empty"
               required:
                 - url
       responses:
@@ -177,6 +178,7 @@ paths:
         - in: path
           name: advert
           required: true
+          description: The ID of the advert to be unsubscribed
           schema:
             type: integer
       responses:
@@ -186,4 +188,5 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
-
+        404:
+          description: Advert not found
