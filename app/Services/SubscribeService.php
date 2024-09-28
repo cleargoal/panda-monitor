@@ -8,33 +8,30 @@ use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
 use App\Notifications\AdvertMissingNotification;
-use App\Notifications\SubscribeNotification;
-use Illuminate\Support\Facades\Notification;
 
 class SubscribeService
 {
+    private ParserService $parser;
+    private NotifyService $notifier;
 
-    private array $advertData;
-    private int $createdAdvertId;
-    private ParserService $service;
-
-    public function __construct(ParserService $service)
+    public function __construct(ParserService $parser, NotifyService $notifier)
     {
-        $this->service = $service;
+        $this->parser = $parser;
+        $this->notifier  = $notifier;
     }
 
     /**
      * Dispatch job
      * @param User $user
-     * @param array $data
+     * @param array $requestData
      * @return string
      */
-    public function subscribe(User $user, array $data): string
+    public function subscribe(User $user, array $requestData): string
     {
-        $data['email'] = $data['email'] ?? null;
-        if ($user->adverts()->where('url', $data['url'])->get()->count() === 0) {
-            $data['advertId'] = $this->createAdvert($data['url']);
-            SubscribeJob::dispatch($user, $data);
+        $requestData['email'] = $requestData['email'] ?? null;
+        if ($user->adverts()->where('url', $requestData['url'])->get()->count() === 0) {
+            $requestData['advertId'] = $this->createAdvert($requestData['url']);
+            SubscribeJob::dispatch($user, $requestData);
             return 'Successfully subscribed';
         } else {
             return 'You are already subscribed to this advert.';
@@ -54,52 +51,31 @@ class SubscribeService
         return $newAdvert->id;
     }
 
-    public function subscriptionProcess(User $user, array $data): void
+    public function subscriptionProcess(User $user, array $jobData): void
     {
-        $this->advertData = $this->service->getDataFromPage($data['url']);
-        if ($this->advertData['price']) {
-            $this->saveDataToDb($user, $data);
-            $this->notifyOnSuccessful($user, $data);
+        $advertData = $this->parser->getDataFromPage($jobData['url']);
+        if ($advertData['price']) {
+            $this->saveDataToDb($user, $jobData, $advertData);
+            $this->notifier->notifyOnSuccessful($user, $jobData, $advertData);
         } else {
-            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $data['url']));
+            $user->notify(new AdvertMissingNotification('Unsuccessful subscription', $jobData['url']));
         }
     }
 
     /**
      * Save to adverts table the name and price from advert
      * @param User $user
-     * @param array $data
+     * @param array $jobData
+     * @param array $advertData
      */
-    protected function saveDataToDb(User $user, array $data): void
+    protected function saveDataToDb(User $user, array $jobData, array $advertData): void
     {
-        $this->createdAdvertId = $data['advertId'];
-        $getAdvert = Advert::find($this->createdAdvertId);
-        $getAdvert->name = $this->advertData['name'];
-        $getAdvert->price = $this->advertData['price'];
+        $getAdvert = Advert::find($jobData['advertId']);
+        $getAdvert->name = $advertData['name'];
+        $getAdvert->price = $advertData['price'];
         $getAdvert->save();
 
-        $user->adverts()->attach($this->createdAdvertId, ['email' => $data['email']]);
-    }
-
-    /**
-     * Successful notification
-     * @param User $user
-     * @param array $data
-     */
-    protected function notifyOnSuccessful(User $user, array $data): void
-    {
-        $mailData = [
-            'advertId' => $this->createdAdvertId,
-            'sourceUrl' => $data['url'],
-            'name' => $this->advertData['name'],
-            'price' => $this->advertData['price'],
-        ];
-
-        if ($data['email'] !== null) {
-            Notification::route('mail', $data['email'])->notify(new SubscribeNotification($mailData));
-        } else {
-            $user->notify(new SubscribeNotification($mailData));
-        }
+        $user->adverts()->attach($jobData['advertId'], ['email' => $jobData['email']]);
     }
 
     public function removeSubscription(User $user, Advert $advert): ?bool
