@@ -8,12 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CreateSubscriptionRequest extends FormRequest
 {
-    public function authorize()
-    {
-        return true;
-    }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'url' => ['required', 'string', 'url'],
@@ -21,7 +17,7 @@ class CreateSubscriptionRequest extends FormRequest
         ];
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
             'url.required' => 'The URL is required.',
