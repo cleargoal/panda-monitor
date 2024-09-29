@@ -128,7 +128,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               type: object
               properties:
@@ -152,6 +152,7 @@ paths:
           description: Bad request (invalid or missing link)
         401:
           description: Unauthorized (invalid or expired confirmation link)
+
 
   /adverts:
     get:
