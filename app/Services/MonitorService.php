@@ -26,7 +26,7 @@ class MonitorService
             CheckPriceChangeJob::dispatch($advert->id, $advert->url);
         }
 
-        InitPriceCheckingJob::dispatch(); // for starting prepare and sending notifications TODO move to other place
+        InitPriceCheckingJob::dispatch(); // for starting prepare and sending notifications
     }
 
     public function checkPrices(int $advertId, string $sourceUrl): void
@@ -67,16 +67,19 @@ class MonitorService
 
         foreach ($changedPrices as $advert) {
             foreach ($advert->users as $user) {
-                $email = $user->pivot->email ?? null;
-                $userAdverts[$user->id]['user'] = $user;
-                $userAdverts[$user->id]['adverts'][] = $advert;
-                $userAdverts[$user->id]['email'] = $email;
+                $email = $user->pivot->email ?: $user->email;
+                $userAdverts[$email]['user'] = $user;
+                $userAdverts[$email]['adverts'][] = $advert;
             }
         }
 
-        foreach ($userAdverts as $userData) {
-            $this->notifier->notifyUserOfChanges($userData['user'], $userData['adverts'], $userData['email']);
+        foreach ($userAdverts as $email => $userData) {
+            if (!empty($email)) {
+                logger()->info("Sending notification to: {$email} for User ID: {$userData['user']->id}");
+                $this->notifier->notifyUserOfChanges($userData['user'], $userData['adverts'], $email);
+            } else {
+                logger()->warning("No email found for User ID: {$userData['user']->id}. Skipping notification.");
+            }
         }
     }
-
 }
