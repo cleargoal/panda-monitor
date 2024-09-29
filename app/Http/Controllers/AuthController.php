@@ -10,21 +10,25 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotifyService;
 
 class AuthController extends Controller
 {
     /**
      * Register a new user.
      */
-    public function register(RegisterUserRequest $request): JsonResponse
+    public function register(RegisterUserRequest $request, NotifyService $service): JsonResponse
     {
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        $service->sendEmailVerificationNotification($user);
 
         return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
     }
@@ -63,5 +67,17 @@ class AuthController extends Controller
     public function authUser(Request $request): JsonResponse
     {
         return response()->json($request->user());
+    }
+
+    public function verifyEmailByLink(EmailVerificationRequest $request): JsonResponse
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json($request->user());
+        }
+        if ($request->user()->markEmailAsVerified()) {
+            event(new Verified($request->user()));
+        }
+
+        return response()->json('Your email is verified. Thanks!', 204);
     }
 }
