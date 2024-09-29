@@ -45,12 +45,13 @@ class NotifyService
      */
     public function notifyUserOfChanges(User $user, array $adverts, string $email): void
     {
-        $mailData = collect($adverts)->map(function ($advert) {
-            return [
+        $mailData = [];
+        foreach ($adverts as $advert) {
+            $mailData[] = [
                 'sourceUrl' => $advert->url,
                 'price' => $advert->price,
             ];
-        })->toArray();
+        }
 
         $this->notifyUserOrPivot($user, new PriceChangedNotification($mailData), $email);
     }
