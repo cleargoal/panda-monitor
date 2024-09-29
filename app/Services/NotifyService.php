@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Notifications\AdvertMissingNotification;
 use App\Notifications\PriceChangedNotification;
 use App\Notifications\SubscribeNotification;
+use Illuminate\Auth\MustVerifyEmail;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
 
 class NotifyService
@@ -76,4 +78,8 @@ class NotifyService
         }
     }
 
+    public function sendEmailVerificationNotification(User $user): void
+    {
+        $user->notify(new VerifyEmail);
+    }
 }
