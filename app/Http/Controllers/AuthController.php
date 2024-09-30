@@ -6,13 +6,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginRequest;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Validation\ValidationException;
 use App\Services\NotifyService;
 
 class AuthController extends Controller
@@ -35,15 +35,14 @@ class AuthController extends Controller
 
     /**
      * Login user and create token.
+     * @throws AuthenticationException
      */
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            throw new AuthenticationException('The provided credentials are incorrect.');
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
