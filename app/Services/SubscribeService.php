@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Dto\StoreAdvertDto;
 use App\Jobs\SubscribeJob;
 use App\Models\Advert;
 use App\Models\User;
@@ -23,15 +24,23 @@ class SubscribeService
     /**
      * Dispatch job
      * @param User $user
-     * @param array $requestData
+     * @param StoreAdvertDto $dto
      * @return string
      */
-    public function subscribe(User $user, array $requestData): string
+    public function subscribe(User $user, StoreAdvertDto $dto): string
     {
-        $requestData['email'] = $requestData['email'] ?? null;
-        if ($user->adverts()->where('url', $requestData['url'])->get()->count() === 0) {
-            $requestData['advertId'] = $this->createAdvert($requestData['url']);
-            SubscribeJob::dispatch($user, $requestData);
+        $email = $dto->email ?? null;
+
+        if ($user->adverts()->where('url', $dto->url)->count() === 0) {
+            $advertId = $this->createAdvert($dto->url);
+
+            $jobData = [
+                'url' => $dto->url,
+                'email' => $email,
+                'advertId' => $advertId,
+            ];
+
+            SubscribeJob::dispatch($user, $jobData);
             return 'Successfully subscribed';
         } else {
             return 'You are already subscribed to this advert.';
