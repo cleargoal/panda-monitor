@@ -13,10 +13,10 @@ class MonitorService
     private ParserService $parser;
     private NotifyService $notifier;
 
-    public function __construct()
+    public function __construct(ParserService $parser, NotifyService $notifier)
     {
-        $this->parser = new ParserService;
-        $this->notifier = new NotifyService;
+        $this->parser = $parser;
+        $this->notifier = $notifier;
     }
 
     public function createCheckingJobs(): void
@@ -75,7 +75,6 @@ class MonitorService
 
         foreach ($userAdverts as $email => $userData) {
             if (!empty($email)) {
-                logger()->info("Sending notification to: {$email} for User ID: {$userData['user']->id}");
                 $this->notifier->notifyUserOfChanges($userData['user'], $userData['adverts'], $email);
             } else {
                 logger()->warning("No email found for User ID: {$userData['user']->id}. Skipping notification.");
