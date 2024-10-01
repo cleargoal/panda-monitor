@@ -124,7 +124,6 @@ class VerifyCsrfToken
      */
     public function getExcludedPaths()
     {
-        Log::info('Csrf.excluded');
         return array_merge($this->except, static::$neverVerify);
     }
 
