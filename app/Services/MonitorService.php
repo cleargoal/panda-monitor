@@ -73,12 +73,6 @@ class MonitorService
             }
         }
 
-        foreach ($userAdverts as $email => $userData) {
-            if (!empty($email)) {
-                $this->notifier->notifyUserOfChanges($userData['user'], $userData['adverts'], $email);
-            } else {
-                logger()->warning("No email found for User ID: {$userData['user']->id}. Skipping notification.");
-            }
-        }
+        $this->notifier->prepareChanged($userAdverts);
     }
 }
