@@ -9,12 +9,22 @@ use App\Models\User;
 use App\Notifications\AdvertMissingNotification;
 use App\Notifications\PriceChangedNotification;
 use App\Notifications\SubscribeNotification;
-use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
 
 class NotifyService
 {
+    public function prepareChanged(array $userAdverts): void
+    {
+        foreach ($userAdverts as $email => $userData) {
+            if (!empty($email)) {
+                $this->notifyUserOfChanges($userData['user'], $userData['adverts'], $email);
+            } else {
+                logger()->warning("No email found for User ID: {$userData['user']->id}. Skipping notification.");
+            }
+        }
+    }
 
     /**
      * Successful notification
@@ -65,7 +75,8 @@ class NotifyService
         $subject = 'Advert does not exist';
 
         foreach ($users as $user) {
-            $this->notifyUserOrPivot($user, new AdvertMissingNotification($subject, $sourceUrl));
+            $pivotEmail = $user->pivot->email ?? null;
+            $this->notifyUserOrPivot($user, new AdvertMissingNotification($subject, $sourceUrl), $pivotEmail);
         }
     }
 
