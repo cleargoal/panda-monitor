@@ -6,18 +6,15 @@ namespace App\Dto;
 
 use InvalidArgumentException;
 
-class StoreAdvertDto
+readonly class StoreAdvertDto
 {
-    public string $url;
-    public ?string $name;
-    public ?float $price;
 
-    public function __construct(string $url, ?string $name = null, ?float $price = null)
+    public function __construct(
+        public string $url,
+        public ?string $name = null,
+        public ?float $price = null
+    )
     {
-        $this->url = $url;
-        $this->name = $name;
-        $this->price = $price;
-
         $this->validate();
     }
 
