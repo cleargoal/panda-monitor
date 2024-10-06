@@ -5,7 +5,7 @@ info:
   description: API documentation for the Price Monitor application
 
 servers:
-  - url: http://localhost:80/api/
+  - url: http://localhost:8008/api/
     description: Local development server
 
 components:
@@ -122,24 +122,16 @@ paths:
         401:
           description: Unauthorized
 
-  /verify:
+
+  /verification-notification:
     post:
-      summary: Submit confirmation link received by email
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                link:
-                  type: string
-                  description: The confirmation link the user received by email.
-              required:
-                - link
+      summary: Send email verification notification
+      description: Sends an email verification link to the authenticated user if they haven't already verified their email.
+      security:
+        - bearerAuth: []
       responses:
         200:
-          description: Email confirmed successfully
+          description: Verification email sent successfully
           content:
             application/json:
               schema:
@@ -147,12 +139,27 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Email confirmed successfully.
-        400:
-          description: Bad request (invalid or missing link)
+                    example: Verification link sent to your email.
         401:
-          description: Unauthorized (invalid or expired confirmation link)
-
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthorized.
+        400:
+          description: Email already verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Email is already verified.
 
   /adverts:
     get:
