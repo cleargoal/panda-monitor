@@ -9,9 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\Notifiable;
 
-/**
- * @OA\Schema(@OA\Xml(name="Advert"))
- */
 class Advert extends Model
 {
     use HasFactory, Notifiable;

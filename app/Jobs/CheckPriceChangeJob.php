@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Models\User;
 use App\Services\MonitorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,6 +32,7 @@ class CheckPriceChangeJob implements ShouldQueue
     /**
      * Execute the job.
      *
+     * @param MonitorService $monitorService
      * @return void
      */
     public function handle(MonitorService $monitorService): void

@@ -5,20 +5,18 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Jobs\CheckPriceChangeJob;
-use App\Jobs\SendPriceNotificationJob;
+use App\Jobs\InitPriceCheckingJob;
 use App\Models\Advert;
-use Illuminate\Support\Facades\Log;
 
 class MonitorService
 {
-    private ParserService $service;
-    private array $advertData;
-    private NotifyService $notifyService;
+    private ParserService $parser;
+    private NotifyService $notifier;
 
-    public function __construct()
+    public function __construct(ParserService $parser, NotifyService $notifier)
     {
-        $this->service = new ParserService;
-        $this->notifyService = new NotifyService;
+        $this->parser = $parser;
+        $this->notifier = $notifier;
     }
 
     public function createCheckingJobs(): void
@@ -27,55 +25,54 @@ class MonitorService
         foreach ($adverts as $advert) {
             CheckPriceChangeJob::dispatch($advert->id, $advert->url);
         }
-        SendPriceNotificationJob::dispatch(); // for starting prepare and sending notifications
+
+        InitPriceCheckingJob::dispatch(); // for starting prepare and sending notifications
     }
 
     public function checkPrices(int $advertId, string $sourceUrl): void
     {
-        $this->advertData = $this->service->getDataFromPage($sourceUrl);
-        if ($this->advertData['price']) {
-            $this->dbOperations($advertId);
+        $advertData = $this->parser->getDataFromPage($sourceUrl);
+        if ($advertData['price']) {
+            $this->updatePrice($advertId, $advertData['price']);
         } else {
-            $this->notifyService->notifyMissingAdvert($advertId, $sourceUrl);
+            $this->notifier->notifyMissingAdvert($advertId, $sourceUrl);
         }
     }
 
-    protected function dbOperations(int $advertId): void
+    protected function updatePrice(int $advertId, int $newPrice): void
     {
-        $advert = Advert::find($advertId);
+        $advert = Advert::findOrFail($advertId);
 
-        if ($advert->price !== $this->advertData['price']) {
-            $advert->price = $this->advertData['price'];
+        if ($advert && $advert->price !== $newPrice) {
+            $advert->price = $newPrice;
             $advert->save();
         }
     }
 
     /**
-     * Method called from Job: SendPriceNotificationJob,
+     * Method called from Job: InitPriceCheckingJob,
      * works with updated adverts data
      * and calls notifyUserOfChanges
      * @return void
      */
     public function processPrices(): void
     {
-        $changedPrices = Advert::whereDate('updated_at', today())
+        $changedPrices = Advert::with(['users' => function ($query) {
+            $query->withPivot('email');
+        }])->whereDate('updated_at', today())
             ->whereDate('created_at', '!=', today())
-            ->with('users')
             ->get();
 
-        if ($changedPrices->isNotEmpty()) {
-            $userAdverts = [];
-            foreach ($changedPrices as $advert) {
-                foreach ($advert->users as $user) {
-                    $userAdverts[$user->id]['user'] = $user;
-                    $userAdverts[$user->id]['adverts'][] = $advert;
-                }
-            }
+        $userAdverts = [];
 
-            foreach ($userAdverts as $userData) {
-                $this->notifyService->notifyUserOfChanges($userData['user'], $userData['adverts']);
+        foreach ($changedPrices as $advert) {
+            foreach ($advert->users as $user) {
+                $email = $user->pivot->email ?: $user->email;
+                $userAdverts[$email]['user'] = $user;
+                $userAdverts[$email]['adverts'][] = $advert;
             }
         }
-    }
 
+        $this->notifier->prepareChanged($userAdverts);
+    }
 }
