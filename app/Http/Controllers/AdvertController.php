@@ -30,8 +30,7 @@ class AdvertController extends Controller
      */
     public function store(CreateSubscriptionRequest $request): JsonResponse
     {
-        $dto = $request->toDto();
-        $result = $this->subscribeService->subscribe($request->user(), $dto);
+        $result = $this->subscribeService->subscribe($request->user(), $request->toDto());
         return response()->json($result);
     }
 

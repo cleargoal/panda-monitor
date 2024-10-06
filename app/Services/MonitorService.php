@@ -8,16 +8,14 @@ use App\Jobs\CheckPriceChangeJob;
 use App\Jobs\InitPriceCheckingJob;
 use App\Models\Advert;
 
-class MonitorService
+readonly class MonitorService
 {
-    private ParserService $parser;
-    private NotifyService $notifier;
 
-    public function __construct(ParserService $parser, NotifyService $notifier)
-    {
-        $this->parser = $parser;
-        $this->notifier = $notifier;
-    }
+    public function __construct(
+        private ParserService $parser,
+        private NotifyService $notifier
+    )
+    {}
 
     public function createCheckingJobs(): void
     {
@@ -43,7 +41,7 @@ class MonitorService
     {
         $advert = Advert::findOrFail($advertId);
 
-        if ($advert && $advert->price !== $newPrice) {
+        if ($advert->price !== $newPrice) {
             $advert->price = $newPrice;
             $advert->save();
         }
