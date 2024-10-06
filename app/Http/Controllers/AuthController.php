@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Services\NotifyService;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -68,15 +69,20 @@ class AuthController extends Controller
         return response()->json($request->user());
     }
 
-    public function verifyEmailByLink(EmailVerificationRequest $request): JsonResponse
+    public function verifyEmailByLink(Request $request): JsonResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
-            return response()->json($request->user());
-        }
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
+        $id = $request->query('id');
+        $hash = $request->query('hash');
+        $user = User::findOrFail($id);
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Invalid verification link'], 400);
         }
 
-        return response()->json('Your email is verified. Thanks!', 204);
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        return response()->json(['message' => 'Email verified successfully'], 200);
     }
+
 }
