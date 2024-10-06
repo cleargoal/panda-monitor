@@ -9,7 +9,7 @@ use App\Http\Controllers\AuthController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/verify-link', [AuthController::class, 'verifyEmailByLink'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+Route::get('/verify-link', [AuthController::class, 'verifyEmailByLink'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/auth-user', [AuthController::class, 'authUser']);
